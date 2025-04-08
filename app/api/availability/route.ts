@@ -37,9 +37,42 @@ export async function GET(request: Request) {
 
     if (!workingHoursResult) return NextResponse.json({ availableSlots: [] }, { status: 200 });
 
-    // Generate all possible time slots in UTC
+    // Determine if selected date is today in UTC
+    const todayUTC = new Date();
+    todayUTC.setUTCHours(0, 0, 0, 0); // Midnight of today in UTC
+    const isToday = utcDate.getTime() === todayUTC.getTime();
+
+    // Calculate adjusted start time
+    let adjustedStartTime = workingHoursResult.startTime;
+
+    if (isToday) {
+      const now = new Date();
+      const currentHours = now.getHours();
+      const currentMinutes = now.getMinutes();
+
+      const [startHourStr, startMinStr] = workingHoursResult.startTime.split(':');
+      const startHour = parseInt(startHourStr, 10);
+      const startMinute = parseInt(startMinStr, 10);
+
+      const workingStartMinutes = startHour * 60 + startMinute;
+      const currentMinutesTotal = currentHours * 60 + currentMinutes;
+
+      if (currentMinutesTotal < workingStartMinutes) {
+        // Use working start time
+        adjustedStartTime = workingHoursResult.startTime;
+      } else {
+        // Calculate next 30-minute interval after current time
+        const nextInterval = Math.ceil(currentMinutesTotal / 30) * 30;
+        const adjustedHours = Math.floor(nextInterval / 60);
+        const adjustedMinutes = nextInterval % 60;
+
+        adjustedStartTime = `${String(adjustedHours).padStart(2, '0')}:${String(adjustedMinutes).padStart(2, '0')}`;
+      }
+    }
+
+    // Generate slots with adjusted start time
     const slots = generateTimeSlots(
-      workingHoursResult.startTime,
+      adjustedStartTime,
       workingHoursResult.endTime,
       service.duration
     );
@@ -74,16 +107,6 @@ export async function GET(request: Request) {
       return { time: slot.time, available: isAvailable };
     });
 
-    console.log('Availability Check:', {
-      inputDate: dateParam,
-      parsedLocal: new Date(dateParam + 'T00:00:00').toString(),
-      utcDate: utcDate.toISOString(),
-      queryRange: {
-        start: startOfDay.toISOString(),
-        end: endOfDay.toISOString(),
-      },
-    });
-
     return NextResponse.json({ availableSlots });
   } catch (error) {
     console.error('Error checking availability:', error);
@@ -106,10 +129,10 @@ function generateTimeSlots(startTime: string, endTime: string, duration: number)
     const timeStr = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
     slots.push({ time: timeStr });
 
-    currentMinute += 15;
+    currentMinute += 30;
     if (currentMinute >= 60) {
       currentHour += Math.floor(currentMinute / 60);
-      currentMinute = currentMinute % 60;
+      currentMinute = currentMinute %= 60;
     }
   }
 
