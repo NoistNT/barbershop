@@ -32,6 +32,15 @@ export default function DateTimeSelection({
 
   // Generate dates for the next 2 weeks
   const dateRange = eachDayOfInterval({ start: today, end: addDays(today, 14) });
+  const lastDate = dateRange[dateRange.length - 1];
+
+  // Disable dates before today and the next 14 days also prevents selecting dates when loading
+  const isDisabled =
+    loadingSlots ||
+    ((date: Date) => {
+      today.setHours(0, 0, 0, 0);
+      return date < today || date > lastDate;
+    });
 
   // Fetch available slots when component mounts and when date changes
   useEffect(() => {
@@ -109,11 +118,11 @@ export default function DateTimeSelection({
             mode="single"
             selected={selectedDate}
             onSelect={handleDateSelect}
-            disabled={dateRange[0] || dateRange[dateRange.length - 1]}
+            disabled={isDisabled}
             className="rounded-md border"
             defaultMonth={today}
             fromDate={today}
-            toDate={addDays(today, 14)}
+            toDate={lastDate}
           />
         </div>
 
@@ -129,20 +138,14 @@ export default function DateTimeSelection({
           ) : availableSlots.length > 0 ? (
             <div className="grid grid-cols-3 gap-2">
               {availableSlots.map((slot) => (
-                <button
+                <Button
                   key={slot.time}
                   onClick={() => handleTimeSelect(slot.time)}
                   disabled={!slot.available}
-                  className={`p-2 border rounded-md text-sm ${
-                    selectedTime === slot.time
-                      ? 'bg-primary text-white border-primary'
-                      : slot.available
-                        ? 'hover:bg-gray-50'
-                        : 'opacity-50 cursor-not-allowed'
-                  }`}
+                  variant={selectedTime === slot.time ? 'default' : 'outline'}
                 >
                   {slot.time}
-                </button>
+                </Button>
               ))}
             </div>
           ) : selectedDate ? (
@@ -159,12 +162,14 @@ export default function DateTimeSelection({
         <Button
           variant="outline"
           onClick={onBack}
+          className="w-full"
         >
           Back
         </Button>
         <Button
           onClick={handleSubmit}
           disabled={!selectedTime || loading}
+          className="w-full ml-2"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Continue'}
         </Button>
