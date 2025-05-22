@@ -52,12 +52,14 @@ export default function Confirmation({ bookingData, onBack, onConfirm }: Confirm
         <Button
           variant="outline"
           onClick={onBack}
+          className="w-full"
         >
           Back
         </Button>
         <Button
           onClick={handleConfirm}
           disabled={isSubmitting}
+          className="w-full ml-2"
         >
           {isSubmitting ? (
             <>
