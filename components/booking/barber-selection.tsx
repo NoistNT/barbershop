@@ -25,9 +25,7 @@ export default function BarberSelection({
         setError(null);
 
         const response = await fetch(`/api/barbers?serviceId=${serviceId}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch barbers');
-        }
+        if (!response.ok) throw new Error('Failed to fetch barbers');
 
         const data = await response.json();
         setBarbers(data);
@@ -49,9 +47,7 @@ export default function BarberSelection({
     );
   }
 
-  if (error) {
-    return <div className="text-red-500 p-4 rounded bg-red-50">Error: {error}</div>;
-  }
+  if (error) return <div className="text-red-500 p-4 rounded bg-red-50">Error: {error}</div>;
 
   return (
     <div>

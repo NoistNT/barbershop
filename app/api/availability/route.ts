@@ -86,7 +86,7 @@ export async function GET(request: Request) {
 
     const appointmentsResult = await db.query.appointments.findMany({
       where: and(
-        eq(appointments.barberId, barberId.toString()),
+        eq(appointments.barberId, barberId),
         gte(appointments.startTime, startOfDay),
         lte(appointments.startTime, endOfDay)
       ),
